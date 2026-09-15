@@ -5,7 +5,10 @@
 
 use tracing::warn;
 
-use crate::{Idevice, IdeviceError, IdeviceService, obf};
+use crate::{
+    Idevice, IdeviceError, IdeviceService, obf, lockdown::LockdownClient,
+    provider::IdeviceProvider,
+};
 
 /// Client for interacting with the iOS misagent service
 ///
@@ -44,6 +47,41 @@ impl IdeviceService for MisagentClient {
 }
 
 impl MisagentClient {
+    /// Connects to misagent using a caller-owned Lockdown session.
+    ///
+    /// The caller must retain `lockdown` until the returned client is dropped.
+    pub async fn connect_with_lockdownd(
+        provider: &dyn IdeviceProvider,
+        lockdown: &mut LockdownClient,
+    ) -> Result<Self, IdeviceError> {
+        let legacy = lockdown
+            .start_session(&provider.get_pairing_file().await?)
+            .await?;
+        let udid = lockdown
+            .get_value(Some("UniqueDeviceID"), None)
+            .await
+            .ok()
+            .and_then(|value| value.as_string().map(ToOwned::to_owned));
+        let (port, ssl) = lockdown.start_service(Self::service_name()).await?;
+
+        let mut idevice = provider.connect(port).await?;
+        if ssl {
+            idevice
+                .start_session(&provider.get_pairing_file().await?, legacy)
+                .await?;
+        }
+        if let Some(udid) = udid {
+            idevice.set_udid(udid);
+        }
+        Self::from_stream(idevice).await
+    }
+
+    #[cfg(test)]
+    #[test]
+    fn lockdown_connector_has_a_distinct_entrypoint() {
+        let _ = Self::connect_with_lockdownd;
+    }
+
     /// Creates a new misagent client from an existing device connection
     ///
     /// # Arguments

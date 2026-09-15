@@ -6,7 +6,10 @@ use std::ptr::null_mut;
 
 use idevice::{IdeviceError, IdeviceService, misagent::MisagentClient, provider::IdeviceProvider};
 
-use crate::{IdeviceFfiError, ffi_err, provider::IdeviceProviderHandle, run_sync_local};
+use crate::{
+    IdeviceFfiError, ffi_err, lockdown::LockdowndClientHandle,
+    provider::IdeviceProviderHandle, run_sync_local,
+};
 #[cfg(all(feature = "core_device_proxy", feature = "rsd"))]
 use crate::{core_device_proxy::AdapterHandle, rsd::RsdHandshakeHandle};
 #[cfg(all(feature = "core_device_proxy", feature = "rsd"))]
@@ -48,6 +51,35 @@ pub unsafe extern "C" fn misagent_connect(
             null_mut()
         }
         Err(e) => ffi_err!(e),
+    }
+}
+
+/// Connects to Misagent using a caller-owned Lockdown client.
+///
+/// The caller must retain and eventually free `lockdownd` after freeing the
+/// returned Misagent client.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn misagent_connect_with_lockdownd(
+    provider: *mut IdeviceProviderHandle,
+    lockdownd: *mut LockdowndClientHandle,
+    client: *mut *mut MisagentClientHandle,
+) -> *mut IdeviceFfiError {
+    if provider.is_null() || lockdownd.is_null() || client.is_null() {
+        return ffi_err!(IdeviceError::FfiInvalidArg);
+    }
+
+    let res: Result<MisagentClient, IdeviceError> = run_sync_local(async move {
+        let provider_ref: &dyn IdeviceProvider = unsafe { &*(*provider).0 };
+        let lockdownd_ref = unsafe { &mut (*lockdownd).0 };
+        MisagentClient::connect_with_lockdownd(provider_ref, lockdownd_ref).await
+    });
+
+    match res {
+        Ok(client_handle) => {
+            unsafe { *client = Box::into_raw(Box::new(MisagentClientHandle(client_handle))) };
+            null_mut()
+        }
+        Err(error) => ffi_err!(error),
     }
 }
 
