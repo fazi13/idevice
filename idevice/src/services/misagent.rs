@@ -76,12 +76,6 @@ impl MisagentClient {
         Self::from_stream(idevice).await
     }
 
-    #[cfg(test)]
-    #[test]
-    fn lockdown_connector_has_a_distinct_entrypoint() {
-        let _ = Self::connect_with_lockdownd;
-    }
-
     /// Creates a new misagent client from an existing device connection
     ///
     /// # Arguments
@@ -245,5 +239,15 @@ impl MisagentClient {
                 ))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MisagentClient;
+
+    #[test]
+    fn lockdown_connector_has_a_distinct_entrypoint() {
+        let _ = MisagentClient::connect_with_lockdownd;
     }
 }
