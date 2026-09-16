@@ -33,6 +33,7 @@ jobs:
           rustup toolchain install 1.97.0 --profile minimal && \
           rustup default 1.97.0 && \
           rustup component add clippy && \
+          rustup component add rustfmt && \
           rustup target add aarch64-apple-ios && \
           rustup target add aarch64-apple-ios-sim && \
           rustup target add aarch64-apple-tvos && \
