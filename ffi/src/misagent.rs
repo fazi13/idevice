@@ -58,6 +58,11 @@ pub unsafe extern "C" fn misagent_connect(
 ///
 /// The caller must retain and eventually free `lockdownd` after freeing the
 /// returned Misagent client.
+///
+/// # Safety
+///
+/// `provider`, `lockdownd`, and `client` must be valid, non-null pointers.
+/// `client` must be writable for one `MisagentClientHandle` pointer.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn misagent_connect_with_lockdownd(
     provider: *mut IdeviceProviderHandle,
