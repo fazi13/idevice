@@ -7,8 +7,8 @@ use std::ptr::null_mut;
 use idevice::{IdeviceError, IdeviceService, misagent::MisagentClient, provider::IdeviceProvider};
 
 use crate::{
-    IdeviceFfiError, ffi_err, lockdown::LockdowndClientHandle,
-    provider::IdeviceProviderHandle, run_sync_local,
+    IdeviceFfiError, ffi_err, lockdown::LockdowndClientHandle, provider::IdeviceProviderHandle,
+    run_sync_local,
 };
 #[cfg(all(feature = "core_device_proxy", feature = "rsd"))]
 use crate::{core_device_proxy::AdapterHandle, rsd::RsdHandshakeHandle};

@@ -6,8 +6,7 @@
 use tracing::warn;
 
 use crate::{
-    Idevice, IdeviceError, IdeviceService, obf, lockdown::LockdownClient,
-    provider::IdeviceProvider,
+    Idevice, IdeviceError, IdeviceService, lockdown::LockdownClient, obf, provider::IdeviceProvider,
 };
 
 /// Client for interacting with the iOS misagent service
